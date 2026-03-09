@@ -3,16 +3,17 @@
 modules for Object oriented toolbox which wrappers get_daily and some more
 """
 
+import datetime as dt
+import logging
 import re
 import sys
-import datetime as dt
+from collections import deque
+from functools import lru_cache, wraps
+
 import numpy as np
 import pandas as pd
-from collections import deque
-from functools import wraps, lru_cache
-import logging
-from scipy import stats
 from bs4 import BeautifulSoup
+from scipy import stats
 
 from xalpha.cons import (
     opendate,
@@ -27,7 +28,6 @@ from xalpha.cons import (
     xnpv,
     xirr,
     rget,
-    rpost,
 )
 from xalpha.info import get_fund_holdings
 from xalpha.universal import (
@@ -211,7 +211,7 @@ class IndexPEBHistory:
         else:
             try:
                 self.name = get_rt(self.scode)["name"]
-            except:
+            except Exception:
                 self.name = self.scode
             if not start:
                 start = "2012-01-01"  # 可能会出问题，对应指数还未有数据
@@ -816,7 +816,7 @@ class CBCalculator:
                 if not self.name:
                     rt = get_rt(self.code)
                     self.name = rt["name"]
-            except:
+            except Exception:
                 self.name = "unknown"
             df = xu.get_daily(self.code, prev=100, end=self.date_obj.strftime("%Y%m%d"))
             self.cbp = df.iloc[-1]["close"]
@@ -1470,7 +1470,7 @@ class QDIIPredict:
             df = fetch_backend("t1-" + code)
             if df is not None:
                 df["date"] = pd_to_datetime(df["date"])
-                for i, r in df.iterrows():
+                for _, r in df.iterrows():
                     self.set_t1(float(r["t1"]), r["date"].strftime("%Y-%m-%d"))
                     self.set_position(float(r["pos"]), r["date"].strftime("%Y-%m-%d"))
             else:  # nodf
@@ -1913,7 +1913,7 @@ class QDIIPredict:
         # ud 预测涨的多
         # du 预测跌的多
         # dd 预测跌的少
-        for i, row in cpdf.iterrows():
+        for _, row in cpdf.iterrows():
             if row[col1] >= 0 and row[col2] > 0:
                 uu += 1
             elif row[col1] >= 0 >= row[col2]:

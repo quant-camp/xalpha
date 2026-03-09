@@ -18,7 +18,6 @@ from xalpha.cons import (
     myround,
     xirr,
     yesterdayobj,
-    pd_to_datetime,
     pd_get_week,
 )
 from xalpha.exceptions import ParserFailure, TradeBehaviorError
@@ -233,7 +232,7 @@ def vtradecost(
 
     coords = []
     # pcftable = pcftable[abs(pcftable["cash"]) > threhold]
-    for i, r in pcftable.iterrows():
+    for _, r in pcftable.iterrows():
         if r.cash != 0:
             coords.append(
                 [r.date, pprice[pprice["date"] <= r.date].iloc[-1]["netvalue"]]
@@ -447,7 +446,8 @@ class trade:
             rem = self.remtable.iloc[-1].rem
             rdate = date
             if (lastdate in self.recorddate_set) and (date not in self.aim.zhesuandate):
-                # deal with buy and sell and label the fenhongzaitouru, namely one label a 0.05 in the original table to label fenhongzaitouru
+                # deal with buy and sell and label the fenhongzaitouru,
+                # namely one label a 0.05 in the original table to label fenhongzaitouru
                 value = self.status[self.status["date"] <= lastdate].iloc[-1].loc[code]
                 if (
                     date in self.aim.fenhongdate
@@ -763,7 +763,7 @@ class itrade(trade):
         if not name:
             try:
                 self.name = get_rt(code)["name"]
-            except:
+            except Exception:
                 self.name = code
         self.type_ = None
 

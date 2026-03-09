@@ -10,7 +10,6 @@ from pyecharts.commons.utils import JsCode
 
 from xalpha.cons import (
     line_opts,
-    opendate,
     opendate_dt,
     yesterdayobj,
     sqrt_days_in_year,

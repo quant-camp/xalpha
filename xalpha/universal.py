@@ -4,20 +4,21 @@ modules for universal fetcher that gives historical daily data and realtime data
 for almost everything in the market
 """
 
+import datetime as dt
+import inspect
+import io
+import logging
 import os
 import sys
 import time
-import datetime as dt
+from functools import lru_cache, wraps
+from uuid import uuid4
+
 import numpy as np
 import pandas as pd
-import logging
-import inspect
-import io
 from bs4 import BeautifulSoup
-from functools import wraps, lru_cache
-from uuid import uuid4
-from sqlalchemy import exc
 from dateutil.relativedelta import relativedelta
+from sqlalchemy import exc
 
 try:
     from jqdatasdk import (
@@ -25,7 +26,6 @@ try:
         query,
         get_fundamentals,
         valuation,
-        get_query_count,
         finance,
         get_index_stocks,
         macro,
@@ -47,8 +47,6 @@ from xalpha.cons import (
     rget_json,
     rpost_json,
     tz_bj,
-    next_onday,
-    opendate_dt,
     pd_to_datetime,
     region_trans,
     today_obj,
@@ -475,7 +473,10 @@ def get_historical_from_ttjj_oversea(code, start=None, end=None):
         dt.datetime.strptime(end, "%Y%m%d") - dt.datetime.strptime(start, "%Y%m%d")
     ).days + 1
     r = rget_json(
-        "http://overseas.1234567.com.cn/overseasapi/OpenApiHander.ashx?api=HKFDApi&m=MethodJZ&hkfcode={hkfcode}&action=2&pageindex=0&pagesize={pagesize}&date1={startdash}&date2={enddash}&callback=".format(
+        (
+            "http://overseas.1234567.com.cn/overseasapi/OpenApiHander.ashx?api=HKFDApi&m=MethodJZ"
+            "&hkfcode={hkfcode}&action=2&pageindex=0&pagesize={pagesize}&date1={startdash}&date2={enddash}&callback="
+        ).format(
             hkfcode=get_hkfcode(code),
             pagesize=pagesize,
             startdash=start[:4] + "-" + start[4:6] + "-" + start[6:],
@@ -767,8 +768,8 @@ def get_historical_fromzzindex(code, start, end=None):
     """
     if code.startswith("ZZ"):
         code = code[2:]
-    start_obj = dt.datetime.strptime(start, "%Y%m%d")
-    fromnow = (today_obj() - start_obj).days
+    # start_obj = dt.datetime.strptime(start, "%Y%m%d")
+    # fromnow = (today_obj() - start_obj).days
     # if fromnow < 20:
     #     flag = "1%E4%B8%AA%E6%9C%88"
     # elif fromnow < 60:
@@ -1020,7 +1021,10 @@ def _get_daily(
 
             4. 对于人民币中间价数据，使用 "USD/CNY" 的形式，具体可能的值可在 http://www.chinamoney.com.cn/chinese/bkccpr/ 历史数据的横栏查询，注意日元需要用 100JPY/CNY.
 
-            5. 对于所有可以在 cn.investing.com 网站查到的金融产品，其代码可以是该网站对应的统一代码，或者是网址部分，比如 DAX 30 的概览页面为 https://cn.investing.com/indices/germany-30，那么对应代码即为 "indices/germany-30"。也可去网页 inspect 手动查找其内部代码（一般不需要自己做，推荐直接使用网页url作为 code 变量值），手动 inspect 加粗的实时价格，其对应的网页 span class 中的 pid 的数值即为内部代码。
+            5. 对于所有可以在 cn.investing.com 网站查到的金融产品，其代码可以是该网站对应的统一代码，或者是网址部分，
+            比如 DAX 30 的概览页面为 https://cn.investing.com/indices/germany-30，那么对应代码即为 "indices/germany-30"。
+            也可去网页 inspect 手动查找其内部代码（一般不需要自己做，推荐直接使用网页url作为 code 变量值），
+            手动 inspect 加粗的实时价格，其对应的网页 span class 中的 pid 的数值即为内部代码。
 
             6. 对于国内发行的基金，使用基金代码，同时开头添加 F。若想考虑分红使用累计净值，则开头添加 T。
 
@@ -1032,7 +1036,8 @@ def _get_daily(
 
             10. 形如 fs-SH501018 格式的数据，可以返回指定场内基金每日份额，需要 enable 聚宽数据源方可查看。
 
-            11. 形如 SP5475707.2 格式的数据，可以返回标普官网相关指数的日线数据（最近十年），id 5475707 部分可以从相关指数 export 按钮获取的链接中得到，小数点后的部分代表保存的列数。参考链接：https://us.spindices.com/indices/equity/sp-global-oil-index. 若SPC开头，则从中国网站获取。
+            11. 形如 SP5475707.2 格式的数据，可以返回标普官网相关指数的日线数据（最近十年），id 5475707 部分可以从相关指数 export 按钮获取的链接中得到，
+            小数点后的部分代表保存的列数。参考链接：https://us.spindices.com/indices/equity/sp-global-oil-index. 若SPC开头，则从中国网站获取。
 
             12. 形如 BB-FGERBIU:ID 格式的数据，对应网页 https://www.bloomberg.com/quote/FGERBIU:ID，可以返回彭博的数据（最近五年）
 
@@ -1042,7 +1047,9 @@ def _get_daily(
 
             15. 形如 YH-CSGOLD.SW 格式的数据，返回雅虎财经标的日线数据（最近十年）。代码来自标的网页 url：https://finance.yahoo.com/quote/CSGOLD.SW。
 
-            16. 形如 FT-22065529 格式的数据或 FT-INX:IOM，可以返回 financial times 的数据，推荐直接用后者。前者数字代码来源，打开浏览器 network 监视，切换图标时间轴时，会新增到 https://markets.ft.com/data/chartapi/series 的 XHR 请求，其 request payload 里的 [elements][symbol] 即为该指数对应数字。
+            16. 形如 FT-22065529 格式的数据或 FT-INX:IOM，可以返回 financial times 的数据，推荐直接用后者。
+            前者数字代码来源，打开浏览器 network 监视，切换图标时间轴时，会新增到 https://markets.ft.com/data/chartapi/series 的 XHR 请求，
+            其 request payload 里的 [elements][symbol] 即为该指数对应数字。
 
             17. 形如 FTC-WTI+Crude+Oil 格式的数据，开头可以是 FTC, FTE, FTX, FTF, FTB, FTI 对应 ft.com 子栏目 commdities，equities，currencies，funds，bonds，indicies。其中 FTI 和 FT 相同。
 
@@ -1056,9 +1063,12 @@ def _get_daily(
 
             22. 形如 pt-F100032 格式的数据，返回指定基金每季度股票债券和现金的持仓比例
 
-            23. 形如 yc-companies/DBP，yc-companies/DBP/price 格式的数据，返回ycharts股票、ETF数据，对应网页 https://ycharts.com/companies/DBP/price，最后部分为数据含义，默认price，可选：net_asset_value（仅ETF可用）、total_return_price、total_return_forward_adjusted_price、average_volume_30，历史数据限制五年内。
+            23. 形如 yc-companies/DBP，yc-companies/DBP/price 格式的数据，返回ycharts股票、ETF数据，
+            对应网页 https://ycharts.com/companies/DBP/price，最后部分为数据含义，默认price，可选：net_asset_value（仅ETF可用）、
+            total_return_price、total_return_forward_adjusted_price、average_volume_30，历史数据限制五年内。
 
-            24. 形如 yc-indices/^SPGSCICO，yc-indices/^SPGSCICO/level 格式的数据，返回ycharts指数数据，对应网页 https://ycharts.com/indices/%5ESPGSCICO/level，最后部分为数据含义，默认level，可选：total_return_forward_adjusted_price，历史数据限制五年内。
+            24. 形如 yc-indices/^SPGSCICO，yc-indices/^SPGSCICO/level 格式的数据，返回ycharts指数数据，
+            对应网页 https://ycharts.com/indices/%5ESPGSCICO/level，最后部分为数据含义，默认level，可选：total_return_forward_adjusted_price，历史数据限制五年内。
 
             25. 形如 HZ999001 HZ999005 格式的数据，代表了华证系列指数 http://www.chindices.com/indicator.html#
 
@@ -1302,7 +1312,7 @@ def get_xueqiu_rt(code):
     percent = r["data"]["quote"]["percent"]
     try:
         percent = _float(percent)
-    except:
+    except Exception:
         pass
     currency = r["data"]["quote"]["currency"]
     market = r["data"]["market"]["region"]
@@ -1687,7 +1697,7 @@ def get_rt_from_ttjj(code):
                     gsz_dict = eval(gsz.text[8:-2])
                     estimate = _float(gsz_dict["gsz"])
                     estimate_time = gsz_dict["gztime"]
-                except:
+                except Exception:
                     estimate = None
             else:
                 try:
@@ -2341,7 +2351,7 @@ def get_fund_peb(code, date, threhold=0.3):
         return {"pe": None, "pb": None}
 
     pel, pbl = [], []
-    for i, r in df.iterrows():
+    for _, r in df.iterrows():
         try:
             fdf = get_daily("peb-" + r["scode"], end=date, prev=60)
             if len(fdf) == 0:
@@ -2795,7 +2805,7 @@ class vinfo(basicinfo, indicator):
         if not name:
             try:
                 name = get_rt(code)["name"]
-            except:
+            except Exception:
                 name = code
         self.name = name
         self.code = code

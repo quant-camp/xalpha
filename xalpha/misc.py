@@ -3,19 +3,19 @@
 modules for misc crawler without unfied API
 """
 
-import re
-import pandas as pd
 import datetime as dt
 import logging
-import numpy as np
-from bs4 import BeautifulSoup
+import re
 from functools import lru_cache
+
+import numpy as np
+import pandas as pd
+from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
 from xalpha.cons import (
     rget,
-    rpost,
     rget_json,
     rpost_json,
     today_obj,

@@ -4,7 +4,6 @@
 
 import os
 import xalpha as xa
-import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 path3 = os.path.join(HERE, "demo3.csv")

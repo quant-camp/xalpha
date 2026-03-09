@@ -1,6 +1,5 @@
 import os
 import xalpha as xa
-import pandas as pd
 import pytest
 import shutil
 

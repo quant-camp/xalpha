@@ -4,7 +4,6 @@ modules of info class, including cashinfo, indexinfo and fundinfo class
 """
 
 import os
-import csv
 import datetime as dt
 import json
 import re
@@ -20,10 +19,8 @@ from xalpha.cons import (
     convert_date,
     droplist,
     myround,
-    opendate,
     opendate_dt,
     pd_to_datetime,
-    yesterday,
     yesterdaydash,
     yesterdayobj,
     today_obj,
@@ -353,7 +350,7 @@ class basicinfo(indicator):
                 if (df is not None) and save is True:
                     self.save(path, self.format, option="a", delta=df)
 
-            except (FileNotFoundError, exc.ProgrammingError, exc.OperationalError) as e:
+            except (FileNotFoundError, exc.ProgrammingError, exc.OperationalError):
                 logger.info("no saved copy of %s" % self.code)
                 fetch = False
                 self._basic_init()
@@ -690,7 +687,7 @@ class fundinfo(basicinfo):
         # print(self.feeinfo)
         try:
             self.segment = fundinfo._piecewise(self.feeinfo)
-        except (ValueError, IndexError) as e:
+        except (ValueError, IndexError):
             logger.warning(
                 "%s 赎回费信息抓取异常，请手动设定 ``self.segment`` 和 ``self.feeinfo``: %s"
                 % (self.code, self.feeinfo)
@@ -1099,7 +1096,7 @@ class fundinfo(basicinfo):
             )
             return
         d = {}
-        for i, row in df.iterrows():
+        for _, row in df.iterrows():
             if row["ratio"] < threhold:
                 continue
             code = ttjjcode(row["code"])
@@ -1388,7 +1385,7 @@ class cashinfo(basicinfo):
             pd.date_range(dt.datetime.strftime(self.start, "%Y-%m-%d"), yesterdaydash())
         )
         valuel = []
-        for i, date in enumerate(datel):
+        for i, _ in enumerate(datel):
             valuel.append((1 + self.interest) ** i)
         dfdict = {
             "date": datel,

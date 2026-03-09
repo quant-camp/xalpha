@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-import pytest
 import pandas as pd
 from sqlalchemy import create_engine
 import xalpha as xa
-import os
 
 
 def test_sql_io():

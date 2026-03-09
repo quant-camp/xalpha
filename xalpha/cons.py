@@ -4,17 +4,17 @@ basic constants and utility functions
 """
 
 import datetime as dt
-import os
-import time
-import logging
 import inspect
 import json
+import logging
+import os
+import time
 from decimal import Decimal
-import requests
 from functools import wraps
-from simplejson.errors import JSONDecodeError
 
 import pandas as pd
+import requests
+from simplejson.errors import JSONDecodeError
 from pyecharts.options import (
     AxisOpts,
     DataZoomOpts,

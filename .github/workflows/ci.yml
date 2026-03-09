@@ -17,9 +17,11 @@ jobs:
         python-version: '3.12'
     - name: Install dependencies
       run: |
-        pip install black
+        pip install black pylint
     - name: Black check
       run: black --check xalpha/ tests/
+    - name: Pylint check
+      run: pylint xalpha/
 
   test:
     needs: lint
@@ -39,6 +41,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest pytest-cov
+        pip install -e .
     - name: Run tests (non-local)
       run: |
         pytest -m "not local" --cov=xalpha -svv tests/

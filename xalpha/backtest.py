@@ -10,7 +10,7 @@ from xalpha.trade import trade, itrade
 from xalpha.multiple import mul, mulfix
 from xalpha.cons import yesterdayobj, avail_dates
 from xalpha.exceptions import TradeBehaviorError, FundTypeError
-from xalpha.cons import opendate_set, next_onday, convert_date
+from xalpha.cons import opendate_set, convert_date
 from xalpha.universal import vinfo, get_daily
 
 

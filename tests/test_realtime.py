@@ -1,5 +1,4 @@
 import xalpha as xa
-import pytest
 import pandas as pd
 
 gf = xa.rfundinfo("001469")
