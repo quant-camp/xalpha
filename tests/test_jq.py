@@ -1,17 +1,17 @@
-import sys
-
-sys.path.insert(0, "../")
+import os
 import xalpha as xa
 import pandas as pd
 import pytest
 import shutil
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 xa.provider.set_jq_data(debug=True)
 
 
 @pytest.fixture
 def csv_cache():
-    xa.set_backend(backend="csv", path="./")
+    xa.set_backend(backend="csv", path=HERE)
     yield
     xa.set_backend(backend="memory", path="pytest-")
 
@@ -19,7 +19,11 @@ def csv_cache():
 # 防止peb csv 数字位长反复变化
 @pytest.fixture
 def reset_table():
-    l = ["./peb-SH000807.csv", "./sw-801180.csv", "./teb-SH000300.csv"]
+    l = [
+        os.path.join(HERE, "peb-SH000807.csv"),
+        os.path.join(HERE, "sw-801180.csv"),
+        os.path.join(HERE, "teb-SH000300.csv"),
+    ]
     for f in l:
         shutil.copyfile(f, f + ".backup")
     yield

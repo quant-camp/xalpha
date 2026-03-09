@@ -16,6 +16,8 @@ from bs4 import BeautifulSoup
 
 from xalpha.cons import (
     opendate,
+    opendate_dt,
+    pd_to_datetime,
     yesterday,
     next_onday,
     last_onday,
@@ -542,11 +544,11 @@ class Compare:
                 currency = "CNY"  # 标的不做汇率调整
             codelist.append(code)
             df = xu.get_daily(code, start=start, end=end)
-            df = df[df.date.isin(opendate)]
+            df = df[df.date.isin(opendate_dt)]
             currency_code = _get_currency_code(currency)
             if currency_code:
                 cdf = xu.get_daily(currency_code, start=start, end=end)
-                cdf = cdf[cdf["date"].isin(opendate)]
+                cdf = cdf[cdf["date"].isin(opendate_dt)]
                 df = df.merge(right=cdf, on="date", suffixes=("_x", "_y"))
                 df[col] = df[col + "_x"] * df[col + "_y"]
             if normalize:
@@ -1467,7 +1469,7 @@ class QDIIPredict:
         if fetch:
             df = fetch_backend("t1-" + code)
             if df is not None:
-                df["date"] = pd.to_datetime(df["date"])
+                df["date"] = pd_to_datetime(df["date"])
                 for i, r in df.iterrows():
                     self.set_t1(float(r["t1"]), r["date"].strftime("%Y-%m-%d"))
                     self.set_position(float(r["pos"]), r["date"].strftime("%Y-%m-%d"))
@@ -1854,7 +1856,7 @@ class QDIIPredict:
         fq = deque([c / 100] * l, maxlen=l)
         current_pos = c / 100
         dl = pd.Series(pd.date_range(start=start, end=end))
-        dl = dl[dl.isin(opendate)]
+        dl = dl[dl.isin(opendate_dt)]
         for j, d in enumerate(dl):
             if j == 0:
                 continue

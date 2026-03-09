@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, "../")
 import xalpha as xa
 import pandas as pd
 
@@ -27,7 +24,10 @@ def test_tendency():
 def test_balance():
     fundlist = ["002146", "001316", "001182"]
     portfolio_dict = {"F" + f: 1 / len(fundlist) for f in fundlist}
-    check_dates = pd.date_range("2019-01-01", "2020-08-01", freq="Q")
+
+    check_dates = pd.date_range(
+        "2019-01-01", "2020-08-01", freq=xa.cons.pd_valid_freq("QE")
+    )
     bt = xa.backtest.Balance(
         start=pd.Timestamp("2019-01-04"),
         totmoney=10000,

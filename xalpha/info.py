@@ -21,6 +21,8 @@ from xalpha.cons import (
     droplist,
     myround,
     opendate,
+    opendate_dt,
+    pd_to_datetime,
     yesterday,
     yesterdaydash,
     yesterdayobj,
@@ -635,7 +637,7 @@ class fundinfo(basicinfo):
         # shengou rate in tiantianjijin, daeshengou rate discount is not considered
         self.name = name  # the name of the fund
         df = pd.DataFrame(data=infodict)
-        df = df[df["date"].isin(opendate)]
+        df = df[df["date"].isin(opendate_dt)]
         df = df.reset_index(drop=True)
         if len(df) == 0:
             raise ParserFailure("no price table found for this fund %s" % self.code)
@@ -854,10 +856,7 @@ class fundinfo(basicinfo):
         try:
             content = pd.read_csv(path + self.code + ".csv")
             pricetable = content.iloc[1:]
-            if pd.__version__[0] == "1":
-                datel = list(pd.to_datetime(pricetable.date))
-            else:
-                datel = list(pd.to_datetime(pricetable.date, format="mixed"))
+            datel = list(pd_to_datetime(pricetable.date))
             self.price = pricetable[["netvalue", "totvalue", "comment"]]
             self.price["date"] = datel
             saveinfo = json.loads(content.iloc[0].date)
@@ -929,7 +928,7 @@ class fundinfo(basicinfo):
         import xalpha.universal as xu
 
         df = xu.get_daily("F" + self.code, start=lastdate.strftime("%Y%m%d"))
-        df = df[df["date"].isin(opendate)]
+        df = df[df["date"].isin(opendate_dt)]
         df = df.reset_index(drop=True)
         df = df[df["date"] <= yesterdayobj()]
         df = df[df["date"] > lastdate]
@@ -939,7 +938,7 @@ class fundinfo(basicinfo):
             df["comment"] = [0 for _ in range(len(df))]
             df["netvalue"] = df["close"]
             df = df.drop("close", axis=1)
-            df = df[df["date"].isin(opendate)]  # ? 是否会过滤掉分红日
+            df = df[df["date"].isin(opendate_dt)]  # ? 是否会过滤掉分红日
             for d in r:
                 df.loc[df["date"] == d["EXDDATE"], "comment"] = d["BONUS"]
             self.price = pd.concat([self.price, df], ignore_index=True, sort=True)
@@ -1019,7 +1018,7 @@ class fundinfo(basicinfo):
             }
         )
         df = df.iloc[::-1]  ## reverse the time order
-        df = df[df["date"].isin(opendate)]
+        df = df[df["date"].isin(opendate_dt)]
         df = df.reset_index(drop=True)
         df = df[df["date"] <= yesterdayobj()]
         if len(df) != 0:
@@ -1165,10 +1164,11 @@ class fundinfo(basicinfo):
         df = self.price
         df["comment"] = [0 for _ in range(len(df))]
         df["netvalue"] = df["close"]
-        df["date"] = pd.to_datetime(df["date"])
-        df = df[df["date"].isin(opendate)]  # ? 是否会过滤掉分红日
+        df["date"] = pd_to_datetime(df["date"])
+        df = df[df["date"].isin(opendate_dt)]  # ? 是否会过滤掉分红日
+        df["comment"] = df["comment"].astype(float)
         for d in r:
-            df.loc[df["date"] == d["EXDDATE"], "comment"] = d["BONUS"]
+            df.loc[df["date"] == d["EXDDATE"], "comment"] = float(d["BONUS"])
         df = df.drop("close", axis=1)
         self.price = df
 
@@ -1270,7 +1270,7 @@ def indexinfo(code, **kws):
 #     index = pd.DataFrame(data=dd)
 #     index = index.iloc[::-1]
 #     index = index.reset_index(drop=True)
-#     self.price = index[index["date"].isin(opendate)]
+#     self.price = index[index["date"].isin(opendate_dt)]
 #     self.price = self.price[self.price["date"] <= yesterdaydash()]
 #     self.name = my_list[-1][2]
 
@@ -1357,7 +1357,7 @@ def indexinfo(code, **kws):
 #         df["netvalue"] = df.totvalue / weight
 #         df["comment"] = [0 for _ in range(len(df))]
 #         df = df.iloc[::-1].iloc[1:]
-#         df = df[df["date"].isin(opendate)]
+#         df = df[df["date"].isin(opendate_dt)]
 #         df = df.reset_index(drop=True)
 #         df = df[df["date"] <= yesterdayobj()]
 #         self.price = self.price.append(df, ignore_index=True, sort=True)
@@ -1397,7 +1397,7 @@ class cashinfo(basicinfo):
             "comment": [0 for _ in datel],
         }
         df = pd.DataFrame(data=dfdict)
-        self.price = df[df["date"].isin(opendate)]
+        self.price = df[df["date"].isin(opendate_dt)]
 
 
 class mfundinfo(basicinfo):
@@ -1470,7 +1470,7 @@ class mfundinfo(basicinfo):
                 "comment": [0 for _ in datel],
             }
         )
-        df = df[df["date"].isin(opendate)]
+        df = df[df["date"].isin(opendate_dt)]
         if len(df) == 0:
             raise ParserFailure("no price table for %s" % self.code)
         df = df.reset_index(drop=True)
@@ -1501,10 +1501,7 @@ class mfundinfo(basicinfo):
         try:
             content = pd.read_csv(path + self.code + ".csv")
             pricetable = content.iloc[1:]
-            if pd.__version__[0] == "1":
-                datel = list(pd.to_datetime(pricetable.date))
-            else:
-                datel = list(pd.to_datetime(pricetable.date, format="mixed"))
+            datel = list(pd_to_datetime(pricetable.date))
             self.price = pricetable[["netvalue", "totvalue", "comment"]]
             self.price["date"] = datel
             self.name = content.iloc[0].comment
@@ -1622,7 +1619,7 @@ class mfundinfo(basicinfo):
                 "comment": comment,
             }
         )
-        df = df[df["date"].isin(opendate)]
+        df = df[df["date"].isin(opendate_dt)]
         df = df.reset_index(drop=True)
         df = df[df["date"] <= yesterdayobj()]
         if len(df) != 0:

@@ -2,15 +2,19 @@
 对于场内数据相关基础设施的测试
 """
 
-import sys
-
-sys.path.insert(0, "../")
+import os
 import xalpha as xa
 import pandas as pd
 
-path3 = "demo3.csv"
-path = "demo.csv"
-ioconf = {"save": True, "fetch": True, "path": "pytest", "form": "csv"}
+HERE = os.path.dirname(os.path.abspath(__file__))
+path3 = os.path.join(HERE, "demo3.csv")
+path = os.path.join(HERE, "demo.csv")
+ioconf = {
+    "save": True,
+    "fetch": True,
+    "path": os.path.join(HERE, "pytest"),
+    "form": "csv",
+}
 ir = xa.irecord(path3)
 orc = xa.record(path)
 

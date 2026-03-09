@@ -1,7 +1,4 @@
-import sys
 import pytest
-
-sys.path.insert(0, "../")
 import xalpha as xa
 
 xa.set_backend(backend="memory", prefix="pytest-")
@@ -27,6 +24,7 @@ def test_overpriced():
 
 @pytest.mark.local
 def test_set_display():
+    pytest.importorskip("IPython")
     xa.set_display("notebook")
     df = xa.get_daily("PDD", prev=30)
     df._repr_javascript_()

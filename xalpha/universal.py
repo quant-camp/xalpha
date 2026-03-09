@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import logging
 import inspect
+import io
 from bs4 import BeautifulSoup
 from functools import wraps, lru_cache
 from uuid import uuid4
@@ -46,10 +47,13 @@ from xalpha.cons import (
     rget_json,
     rpost_json,
     tz_bj,
-    last_onday,
+    next_onday,
+    opendate_dt,
+    pd_to_datetime,
     region_trans,
     today_obj,
     _float,
+    last_onday,
 )
 from xalpha.provider import data_source
 from xalpha.exceptions import DataPossiblyWrong, ParserFailure
@@ -480,7 +484,7 @@ def get_historical_from_ttjj_oversea(code, start=None, end=None):
     )
     datalist = {"date": [], "close": []}
     for dd in r["Data"]:
-        datalist["date"].append(pd.to_datetime(dd["PDATE"]))
+        datalist["date"].append(pd_to_datetime(dd["PDATE"]))
         datalist["close"].append(dd["NAV"])
     df = pd.DataFrame(datalist)
     df = df[df["date"] <= end]
@@ -499,8 +503,8 @@ def get_portfolio_fromttjj(code, start=None, end=None):
     r = rget("http://fundf10.eastmoney.com/zcpz_{code}.html".format(code=code))
     s = BeautifulSoup(r.text, "lxml")
     table = s.find("table", class_="tzxq")
-    df = pd.read_html(str(table))[0]
-    df["date"] = pd.to_datetime(df["报告期"])
+    df = pd.read_html(io.StringIO(str(table)))[0]
+    df["date"] = pd_to_datetime(df["报告期"])
     df["stock_ratio"] = (
         df["股票占净比"].replace("---", "0%").apply(lambda s: _float(s[:-1]))
     )
@@ -528,7 +532,7 @@ def get_fundshare_byjq(code, **kws):
         .filter(finance.FUND_SHARE_DAILY.date <= kws["end"])
         .order_by(finance.FUND_SHARE_DAILY.date)
     )
-    df["date"] = pd.to_datetime(df["date"])
+    df["date"] = pd_to_datetime(df["date"])
     df = df[["date", "shares"]]
     return df
 
@@ -615,7 +619,7 @@ selectedModule=PerformanceGraphView&selectedSubModule=Graph\
     df = df.iloc[6:]
     df = df.dropna()
     df["close"] = df["Unnamed: " + col]
-    df["date"] = pd.to_datetime(df["Unnamed: 0"])
+    df["date"] = pd_to_datetime(df["Unnamed: 0"])
     df = df[["date", "close"]]
     return df
 
@@ -657,7 +661,7 @@ timeframe={years}&period=daily&volumePeriod=daily".format(years=years, code=code
     )
     df = pd.DataFrame(r[0]["price"])
     df["close"] = df["value"]
-    df["date"] = pd.to_datetime(df["dateTime"])
+    df["date"] = pd_to_datetime(df["dateTime"])
     df = df[["date", "close"]]
     return df
 
@@ -787,7 +791,7 @@ def get_historical_fromzzindex(code, start, end=None):
         },
     )
     df = pd.DataFrame(r["data"])
-    df["date"] = pd.to_datetime(df["tradeDate"])
+    df["date"] = pd_to_datetime(df["tradeDate"])
     df["close"] = df["close"].apply(_float)
     return df[["date", "close"]]
 
@@ -818,7 +822,7 @@ def get_historical_fromgzindex(code, start, end):
     )
     df = pd.DataFrame(r["data"]["data"], columns=r["data"]["item"])
 
-    df["date"] = pd.to_datetime(df["timestamp"])
+    df["date"] = pd_to_datetime(df["timestamp"])
     df = df[["date", "close", "open", "low", "high", "percent", "amount", "volume"]]
     # TODO: 是否有这些列不全的国证指数？
     df = df[::-1]
@@ -841,7 +845,7 @@ def get_historical_fromhzindex(code, start, end):
         "https://www.chindices.com/index/values.val?code={code}".format(code=code)
     )
     df = pd.DataFrame(r["data"])
-    df["date"] = pd.to_datetime(df["date"])
+    df["date"] = pd_to_datetime(df["date"])
     df = df[["date", "price", "pctChange"]]
     df.rename(columns={"price": "close", "pctChange": "percent"}, inplace=True)
     df = df[::-1]
@@ -873,7 +877,7 @@ def get_historical_fromesunny(code, start=None, end=None):
     df = pd.DataFrame(
         data, columns=["date", "open", "high", "low", "close", "settlement", "amount"]
     )
-    df["date"] = pd.to_datetime(df["date"])
+    df["date"] = pd_to_datetime(df["date"])
     for c in ["open", "high", "low", "close", "settlement", "amount"]:
         df[c] = df[c].apply(_float)
     return df
@@ -983,7 +987,7 @@ def get_macro(table, start, end, datecol="stat_year"):
         .filter(getattr(getattr(macro, table), datecol) <= end)
         .order_by(getattr(getattr(macro, table), datecol))
     )
-    df[datecol] = pd.to_datetime(df[datecol])
+    df[datecol] = pd_to_datetime(df[datecol])
     df["date"] = df[datecol]
     return df
 
@@ -2047,7 +2051,7 @@ def cachedio(**ioconf):
                             df0 = getattr(thismodule, "cached_dict")[key]
                         else:
                             raise ValueError("no %s option for backend" % backend)
-                        df0[date] = pd.to_datetime(df0[date])
+                        df0[date] = pd_to_datetime(df0[date])
                         # 向前延拓
                         is_changed = False
                         if df0.iloc[0][date] > start_obj and not fetchonly:
@@ -2210,7 +2214,7 @@ def _get_index_weight_range(code, start, end):
     df = pd.DataFrame({"code": [], "weight": [], "display_name": [], "date": []})
     while True:
         if d > end_m:
-            df["date"] = pd.to_datetime(df["date"])
+            df["date"] = pd_to_datetime(df["date"])
             return df
         logger.debug("fetch index weight on %s for %s" % (d, code))
         df0 = get_index_weights(index_id=code, date=d.strftime("%Y-%m-%d"))
@@ -2476,7 +2480,7 @@ def get_sw_from_jq(code, start=None, end=None, **kws):
         .filter(finance.SW1_DAILY_VALUATION.code == code)
         .order_by(finance.SW1_DAILY_VALUATION.date.asc())
     )
-    df["date"] = pd.to_datetime(df["date"])
+    df["date"] = pd_to_datetime(df["date"])
     return df
 
 

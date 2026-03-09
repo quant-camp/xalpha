@@ -8,7 +8,14 @@ from pyecharts import options as opts
 from pyecharts.charts import Kline, Line, Bar, Grid
 from pyecharts.commons.utils import JsCode
 
-from xalpha.cons import line_opts, opendate, yesterdayobj, sqrt_days_in_year
+from xalpha.cons import (
+    line_opts,
+    opendate,
+    opendate_dt,
+    yesterdayobj,
+    sqrt_days_in_year,
+    pd_valid_freq,
+)
 
 
 def _upcount(ls):
@@ -72,7 +79,7 @@ class indicator:
             for date in times:
                 netvalue.append(self.unitvalue(date))  # may take a long time
             self.price = pd.DataFrame(data={"date": times, "netvalue": netvalue})
-            self.price = self.price[self.price["date"].isin(opendate)]
+            self.price = self.price[self.price["date"].isin(opendate_dt)]
             self.name = name
 
     def comparison(self, date=yesterdayobj()):
@@ -118,13 +125,17 @@ class indicator:
     def benchmark_annualized_returns(self, date=yesterdayobj()):
         return indicator.annualized_returns(self.bmprice, self.start, date)
 
-    def pct_chg(self, freq="Y", benchmark=True):
+    def pct_chg(self, freq=None, benchmark=True):
         """
         年度，月，周涨幅统计
 
         :param freq: str, default Y, could be M or W or anything pd.date_range accepts
         :return: pd.DataFrame with columns date and pct_chg
         """
+        if freq is None:
+            freq = "YE"
+        freq = pd_valid_freq(freq)
+
         if getattr(self, "bmprice", None) is None:
             benchmark = False
 

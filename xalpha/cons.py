@@ -65,6 +65,7 @@ caldate = pd.read_csv(os.path.join(__path__[0], "caldate.csv"))
 opendate = list(caldate[caldate["is_open"] == 1]["cal_date"])
 # opendate = list(ts.trade_cal()[ts.trade_cal()['isOpen']==1]['calendarDate'])
 opendate_set = set(opendate)  # for speed checking?
+opendate_dt = pd.to_datetime(opendate)
 
 # fund code list which always round down for the purchase share approximation
 droplist = ["003318", "000311", "000601", "009989"]
@@ -202,6 +203,18 @@ def myround(num, label=1):
     return res
 
 
+def pd_to_datetime(target, **kwargs):
+    """
+    version aware pd.to_datetime, use format="mixed" for pandas >= 2.0
+    """
+    if pd.__version__[0] == "1":
+        return pd.to_datetime(target, **kwargs)
+    else:
+        if "format" not in kwargs:
+            kwargs["format"] = "mixed"
+        return pd.to_datetime(target, **kwargs)
+
+
 def convert_date(date):
     """
     convert date into datetime object
@@ -210,9 +223,47 @@ def convert_date(date):
     :returns: corresponding datetime object
     """
     if isinstance(date, str):
-        return pd.Timestamp(date)
+        return pd_to_datetime(date)
+    return date
+
+
+def pd_get_week(series):
+    """
+    version aware week getting for pandas series
+    """
+    if pd.__version__[0] == "1":
+        return series.dt.week
     else:
-        return date
+        return series.dt.isocalendar().week
+
+
+_FREQ_SUPPORT_CACHE = {}
+
+
+def pd_valid_freq(freq):
+    """
+    version aware frequency string for pandas date_range.
+    Converts modern aliases like 'ME', 'QE', 'YE' to legacy 'M', 'Q', 'Y' on unsupported pandas versions.
+    """
+    if freq is None or not isinstance(freq, str):
+        return freq
+
+    global _FREQ_SUPPORT_CACHE
+    mapping = {"ME": "M", "QE": "Q", "YE": "Y"}
+
+    for k, v in mapping.items():
+        if k in freq:
+            if k not in _FREQ_SUPPORT_CACHE:
+                try:
+                    pd.date_range("2020-01-01", periods=1, freq=k)
+                    _FREQ_SUPPORT_CACHE[k] = True
+                except ValueError:
+                    _FREQ_SUPPORT_CACHE[k] = False
+
+            if not _FREQ_SUPPORT_CACHE[k]:
+                freq = freq.replace(k, v)
+
+    return freq
 
 
 def _date_check(dtobj, check=False):
@@ -337,7 +388,10 @@ def reconnect(tries=5, timeout=12):
                             "Still wrong at fetching url: %s. after %s tries."
                             % (url, tries)
                         )
-                        logger.error("Fails due to %s" % e.args[0])
+                        if e.args:
+                            logger.error("Fails due to %s" % e.args[0])
+                        else:
+                            logger.error("Fails due to %s" % str(e))
                         raise e
                     time.sleep(0.5 * count)
 

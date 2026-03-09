@@ -1,12 +1,16 @@
-import sys
-
-sys.path.insert(0, "../")
+import os
 import xalpha as xa
 from xalpha.exceptions import FundTypeError
 import pandas as pd
 import pytest
 
-ioconf = {"save": True, "fetch": True, "path": "pytest", "form": "csv"}
+HERE = os.path.dirname(os.path.abspath(__file__))
+ioconf = {
+    "save": True,
+    "fetch": True,
+    "path": os.path.join(HERE, "pytest"),
+    "form": "csv",
+}
 ca = xa.cashinfo(interest=0.0002, start="2015-01-01")
 zzhb = xa.indexinfo("0000827", **ioconf)
 hs300 = xa.fundinfo("000311")
@@ -95,7 +99,8 @@ def test_fund():
     assert hs300.fenhongdate[1] == pd.Timestamp("2017-08-15")
     assert hs300.get_holdings(2019, 4).iloc[0]["name"] == "中国平安"
     assert (
-        float(hs300.special[hs300.special["date"] == "2017-08-04"]["comment"]) == 0.19
+        float(hs300.special[hs300.special["date"] == "2017-08-04"].iloc[0]["comment"])
+        == 0.19
     )
     hs300.rate = 0.12
     hs300.segment = [[0, 7], [7, 365], [365, 730], [730]]

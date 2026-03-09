@@ -12,7 +12,15 @@ from pyecharts.charts import Bar, Line
 from pyecharts import options as opts
 
 import xalpha.remain as rm
-from xalpha.cons import convert_date, line_opts, myround, xirr, yesterdayobj
+from xalpha.cons import (
+    convert_date,
+    line_opts,
+    myround,
+    xirr,
+    yesterdayobj,
+    pd_to_datetime,
+    pd_get_week,
+)
 from xalpha.exceptions import ParserFailure, TradeBehaviorError
 from xalpha.record import irecord
 import xalpha.universal as xu
@@ -109,6 +117,8 @@ def vtradevolume(cftable, freq="D", rendered=True):
     :returns: the Bar object
     """
     ### WARN: datazoom and time conflict, sliding till 1970..., need further look into pyeacharts
+    cftable = cftable.copy()
+    cftable["date"] = pd.to_datetime(cftable["date"])
     startdate = cftable.iloc[0]["date"]
     if freq == "D":
         # datedata = [d.to_pydatetime() for d in cftable["date"]]
@@ -124,14 +134,9 @@ def vtradevolume(cftable, freq="D", rendered=True):
             if row["cash"] < 0
         ]
     elif freq == "W":
-        if pd.__version__[0] == "1":
-            cfmerge = cftable.groupby(
-                [cftable["date"].dt.year, cftable["date"].dt.week]
-            )["cash"].sum()
-        else:
-            cfmerge = cftable.groupby(
-                [cftable["date"].dt.year, cftable["date"].dt.isocalendar().week]
-            )["cash"].sum()
+        cfmerge = cftable.groupby(
+            [cftable["date"].dt.year, pd_get_week(cftable["date"])]
+        )["cash"].sum()
         # datedata = [
         #     dt.datetime.strptime(str(a) + "4", "(%Y, %W)%w")
         #     for a, _ in cfmerge.items()
@@ -210,9 +215,11 @@ def vtradecost(
     """
     funddata = []
     costdata = []
+    end = convert_date(end)
     pprice = self.price[self.price["date"] <= end]
     pcftable = cftable
     if start is not None:
+        start = convert_date(start)
         pprice = pprice[pprice["date"] >= start]
         pcftable = pcftable[pcftable["date"] >= start]
     for _, row in pprice.iterrows():
