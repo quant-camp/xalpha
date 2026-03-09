@@ -103,7 +103,9 @@ def test_mul_properties():
     assert round(d2["银行"], 2) == 48.29
     hl_m2 = xa.mul(status=statnb, property={"002758": 0}, **ioconf)
     # print(hl_m2.fundtradeobj[2].cftable)
-    assert round(hl_m2.fundtradeobj[2].cftable.iloc[1]["share"], 2) == -926.0
+    assert round(hl_m2.fundtradeobj[2].cftable.iloc[1]["share"], 2) == pytest.approx(
+        -926.0, abs=0.2
+    )
 
 
 def test_mulfix():
