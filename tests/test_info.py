@@ -164,6 +164,7 @@ def delete_csvlines(path, lines=5):
     df.to_csv(path, index=False)
 
 
+@pytest.mark.local
 def test_csvio():
     hs300 = xa.fundinfo("000311", **ioconf)
     len1 = len(hs300.price)
@@ -188,6 +189,7 @@ def test_csvio():
     )
 
 
+@pytest.mark.local
 def test_fund_update():
     zghl = xa.fundinfo(
         "501029", **ioconf

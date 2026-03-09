@@ -32,6 +32,7 @@ def test_set_display():
     assert getattr(df, "_repre_javascript_", None) is None
 
 
+@pytest.mark.local
 def test_get_currency():
     assert (
         xa.toolbox.get_currency_code("indices/india-50-futures") == "currencies/inr-cny"

@@ -91,7 +91,7 @@ def _set_display_notebook():
     """
     Initialize DataTable mode for pandas DataFrame represenation.
     """
-    from IPython.core.display import display, Javascript
+    from IPython.display import display, Javascript
 
     display(Javascript("""
             require.config({
