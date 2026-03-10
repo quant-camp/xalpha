@@ -552,6 +552,7 @@ class fundinfo(basicinfo):
             "http://fund.eastmoney.com/f10/jjfl_" + code + ".html"
         )  # html url for trade fees info of certain fund
         self.priceonly = priceonly
+        self.purchase_status = "未知"
 
         super().__init__(
             code,
@@ -562,6 +563,17 @@ class fundinfo(basicinfo):
             round_label=label,
             dividend_label=dividend_label,
         )
+
+        # Proactively refresh status if caching an old or incomplete status
+        if not self.priceonly:
+            if (
+                self.purchase_status == "未知"
+                or (
+                    "限大额" in self.purchase_status and "(" not in self.purchase_status
+                )
+                or ("暂停申购" in self.purchase_status and "(" in self.purchase_status)
+            ):
+                self._feepreprocess()
 
         self.special = self.price[self.price["comment"] != 0]
         self.specialdate = list(self.special["date"])
@@ -651,6 +663,25 @@ class fundinfo(basicinfo):
         soup = BeautifulSoup(
             feepage.text, "lxml"
         )  # parse the redemption fee html page with beautiful soup
+
+        try:
+            td = None
+            limit_td = None
+            for item in soup.find_all("td"):
+                text = item.get_text(strip=True)
+                if "申购状态" in text:
+                    td = item
+                elif "日累计申购限额" in text:
+                    limit_td = item
+            if td:
+                self.purchase_status = td.find_next_sibling("td").get_text(strip=True)
+            if limit_td and "暂停申购" not in self.purchase_status:
+                limit = limit_td.find_next_sibling("td").get_text(strip=True)
+                if limit and limit not in ["无限额", "---"]:
+                    self.purchase_status += f" ({limit})"
+        except Exception:
+            logger.info("warning: purchase status extraction failed for %s" % self.code)
+
         somethingwrong = False
         if not soup.findAll("a", {"name": "shfl"}):
             somethingwrong = True
@@ -818,6 +849,7 @@ class fundinfo(basicinfo):
 
     def info(self):
         super().info()
+        print("fund purchase status: %s" % self.purchase_status)
         print("fund redemption fee info: %s" % self.feeinfo)
 
     def _save_csv(self, path):
@@ -833,6 +865,7 @@ class fundinfo(basicinfo):
                 "name": self.name,
                 "rate": self.rate,
                 "segment": self.segment,
+                "purchase_status": self.purchase_status,
             }
         )
         df = pd.DataFrame(
@@ -863,6 +896,7 @@ class fundinfo(basicinfo):
             self.feeinfo = saveinfo["feeinfo"]
             self.name = saveinfo["name"]
             self.rate = saveinfo["rate"]
+            self.purchase_status = saveinfo.get("purchase_status", "未知")
         except FileNotFoundError as e:
             # print('no saved copy of fund %s' % self.code)
             raise e
@@ -880,6 +914,7 @@ class fundinfo(basicinfo):
                 "name": self.name,
                 "rate": self.rate,
                 "segment": self.segment,
+                "purchase_status": self.purchase_status,
             }
         )
         df = pd.DataFrame(
@@ -911,6 +946,7 @@ class fundinfo(basicinfo):
             self.feeinfo = saveinfo["feeinfo"]
             self.name = saveinfo["name"]
             self.rate = saveinfo["rate"]
+            self.purchase_status = saveinfo.get("purchase_status", "未知")
         except exc.ProgrammingError as e:
             # print('no saved copy of %s' % self.code)
             raise e

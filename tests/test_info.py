@@ -222,4 +222,12 @@ def test_vinfo():
     t.dailyreport()
     assert len(t.cftable) == 2
     # yy = xa.vinfo("ZZ931152") # fail on oversea server
-    hs300.pct_chg()
+
+
+@pytest.mark.local
+def test_purchase_status():
+    codes = ["161129", "164824", "000311"]
+    for code in codes:
+        f = xa.fundinfo(code)
+        print(f"\nFund {code} ({f.name}) Purchase Status: {f.purchase_status}")
+        assert f.purchase_status != "未知"
