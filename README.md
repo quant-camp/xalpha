@@ -50,11 +50,11 @@ xa.PEBHistory("F100032").v()
 xa.CBCalculator("SH113577").analyse()
 ```
 
-一行估算基金净值 (QDII 基金需自己提供持仓字典)
+一行估算基金净值 (支持核心 QDII 基金 T-1 以及基于期货的 T-0 实时净值预测)
 
-```python
-xa.QDIIPredict("SH501018", positions=True).get_t0_rate()
-```
+ ```python
+ xa.QDIIPredict("SH501018", positions=True).get_t0_rate()
+ ```
 
 xalpha 不止如此，更多特性，欢迎探索。不只是数据，更是工具！
 
@@ -90,11 +90,19 @@ $ cd xalpha && pip3 install .
 
 由于丰富的可视化支持，建议配合 Jupyter Notebook 使用。可以参照[这里](https://xalpha.readthedocs.io/en/latest/demo.html)给出的示例连接，快速掌握大部分功能。
 
-部分效果如下：
+**支持多市场指数与个股的 K 线及历史估值可视化分析：**
 
 <img src="doc/source/kline.png" width="90%">
 
+**基于底层数据的投资账户历史净值与各基金成本偏离度分析：**
+
 <img src="doc/source/tradecost.png" width="90%">
+
+**核心 QDII 基金的 T-1 净值预测及基于期货的 T-0 实时净值仪表盘：**
+
+<img src="doc/source/qdii_dashboard.png" width="90%">
+
+**自动穿透持仓，获取基金组合底层的等效股票集中度及行业分布：**
 
 <img src="doc/source/positions.png" width="80%">
 
@@ -125,7 +133,12 @@ $ cd xalpha && pip3 install .
 
 ## 致谢
 
-感谢[集思录](https://www.jisilu.cn)对本项目的支持和赞助，可以在[这里](https://www.jisilu.cn/data/qdii/#qdiie)查看基于 xalpha 引擎构建的 QDII 基金净值预测。
+感谢[集思录](https://www.jisilu.cn)对本项目的支持和赞助，可以在[这里](https://www.jisilu.cn/data/qdii/#qdiie)查看基于 xalpha 引擎构建的 QDII 基金净值预测 (2026.3 合规原因下架)。
+
+## 免责声明
+
+本项目仅提供获取公开数据的示例代码，不提供任何数据存储和服务。
+软件用户需自行遵守相关网站的使用条款及法律法规。
 
 ## 博客
 
