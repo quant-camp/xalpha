@@ -53,7 +53,11 @@ qdiis = [
     "SH513390",
     "SZ159660",
     # S&P 500
-    "SZ161125", "SH513500", "SZ159612", "SH513650", "SZ159655", # "SZ165510" (No data source)
+    "SZ161125",
+    "SH513500",
+    "SZ159612",
+    "SH513650",
+    "SZ159655",  # "SZ165510" (No data source)
     # Other Indices
     "SZ159561",
     "SH513030",  # Germany

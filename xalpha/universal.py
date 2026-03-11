@@ -180,6 +180,11 @@ def get_historical_fromxq(code, count, type_="before", full=False):
         cookies=get_token(),
         headers={"user-agent": "Mozilla/5.0"},
     )
+    if not r.get("data") or r["data"].get("item") is None:
+        raise DataPossiblyWrong(
+            "Xueqiu API fails to return data for %s, check if the symbol is correct"
+            % code
+        )
     df = pd.DataFrame(data=r["data"]["item"], columns=r["data"]["column"])
     df["date"] = (df["timestamp"]).apply(ts2pdts)  # reset hours to zero
     return df
@@ -1030,7 +1035,9 @@ def _get_daily(
 
             7. 对于国内发行的货币基金，使用基金代码，同时开头添加 M。（全部按照净值数据处理）
 
-            8. 形如 peb-000807.XSHG 或 peb-SH000807 格式的数据，可以返回每周的指数估值情况，需要 enable 聚宽数据源方可查看。
+            8. 形如 peb-000807.XSHG 或 peb-SH000807 格式的数据，可以返回每周的指数估值情况（需要聚宽数据源）；
+            peb-SH600000 格式返回个股每日估值情况（雪球源）；peb-F000001 返回基金每周持仓穿透估值情况。
+
 
             9. 形如 iw-000807.XSHG 或 iw-SH000807 格式的数据，可以返回每月的指数成分股和实时权重，需要 enable 聚宽数据源方可查看。
 
@@ -2264,6 +2271,8 @@ def get_stock_peb_range(code, start, end, wrapper=False):
     :param end:
     :return:
     """
+    if code.isdigit() and len(code) == 6:
+        code = ttjjcode(code)
     if code.startswith("HK") and code[2:].isdigit():
         code = code[2:]
     count = (today_obj() - dt.datetime.strptime(start, "%Y%m%d")).days

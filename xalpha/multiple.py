@@ -184,7 +184,7 @@ class mul:
         tturnover = turnoverrate(self.totcftable[self.totcftable["date"] <= date], date)
         # 计算的是总系统作为整体和外界的换手率，而非系统各成分之间的换手率
         tearn = summarydf["基金收益总额"].sum()
-        trate = round(tearn / tbtnk * 100, 4)
+        trate = round(tearn / tbtnk * 100, 4) if tbtnk != 0 else 0.0
         trow = pd.DataFrame(
             [
                 [
@@ -228,6 +228,7 @@ class mul:
         for date in nndtlist:
             reslist.append(sum([item[1] for item in dtlist if item[0] == date]))
         df = pd.DataFrame(data={"date": nndtlist, "cash": reslist})
+        df["date"] = pd.to_datetime(df["date"])
         df = df[df["cash"] != 0]
         df = df.reset_index(drop=True)
         return df
