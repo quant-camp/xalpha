@@ -141,14 +141,13 @@ Write a **single self-contained Python script** that:
 
 1. Imports `xalpha` and any needed stdlib/pandas/numpy modules.
 2. Fetches all required data using the APIs discovered in Step 3.
-3. Handles errors gracefully — if one data source fails, try fallbacks; if one
-   asset in a list fails, skip it and warn rather than crash.
-4. Cleans the data:
+3. **Workspace Organization**: If you create scratch scripts (e.g., `test_api.py`, `diag.py`) or temporary files to debug, create them directly in the target report folder or move them there immediately.
+4. Handles errors gracefully — if one data source fails, try fallbacks; if one asset in a list fails, skip it and warn rather than crash.
+5. Cleans the data:
    - Ensure dates are `datetime64`.
    - Handle NaN: forward-fill small gaps (≤3 days); drop assets with >30% missing.
    - Align data on common trading dates when comparing multiple series.
-5. Saves intermediate results to a temporary workspace CSV (or keeps in memory if
-   the script does everything in one pass).
+6. Saves intermediate results to a temporary workspace CSV (or keeps in memory if the script does everything in one pass).
 
 Run the script using the user's specified Python/conda environment. If not
 specified, use the system default.
@@ -231,9 +230,9 @@ The folder structure should look like this:
 ## Cleanup
 
 After the report is generated successfully:
-- Move all related scripts and data files into the designated output folder.
-- Ensure the project root remains clean.
-- Verify the HTML report correctly references any relative paths if it is not 100% self-contained (though self-contained is still preferred).
+- **Move all related scripts, debug/test files, and intermediate data files** into the designated output folder. DO NOT leave any temporary files (e.g., `test_fetch.py`, `diag.py`, `data.csv`) in the project root.
+- **Perform a final cleanup**: Delete any transient test scripts or log files that are not part of the final reproducible analysis (unless they are valuable for documenting the process). Ensure the project environment is as clean as it was before the task started.
+- Verify the HTML report correctly is 100% self-contained for the best portability.
 
 ## Error Handling Philosophy
 
