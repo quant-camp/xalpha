@@ -108,6 +108,10 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+# Include marketing landing pages in the build output
+html_extra_path = ["../marketing"]
+
+
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
 #
