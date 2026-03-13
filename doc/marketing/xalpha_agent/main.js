@@ -21,13 +21,12 @@ results = []
 for code in df['code']:
     bt = xa.trade.backtest(code, start="20230101", end="20231231")
     if bt.max_drawdown < 0.15:
-        results.append(bt.summary())
-print(xa.misc.format_report(results))`
+        results.append(bt.summary())`
     },
     {
         type: 'agent',
         label: 'xalpha Agent',
-        text: '分析完成！表现最优的前三名分别是：景顺长城 500 增强 (000311)、博道 500 增强 (006593) 以及 华夏 500 增强。它们的平均超额收益达到了 8.2%，且回撤均成功控制在 12% 左右。需要我生成完整的 HTML 分析报告吗？'
+        text: '分析完成！表现最优的前三名分别是：景顺长城 500 增强 (000311)... 它们的平均超额收益达到了 8.2%，且回撤均成功控制在 12% 左右。需要我生成完整的 HTML 分析报告吗？'
     }
 ];
 
